@@ -14,5 +14,6 @@
     }
   ],
   "frameworks": ["arduino"],
-  "platforms": "*"
+  "platforms": "*",
+  "dependencies": ["adafruit/Adafruit MCP23017 Arduino Library"]
 }
