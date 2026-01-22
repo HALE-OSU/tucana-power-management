@@ -1,4 +1,4 @@
-#include "MySharedLib.h"
+#include "TucanaPowerManagement.h"
 
 TucanaPowerManagement::TucanaPowerManagement() {}
 
