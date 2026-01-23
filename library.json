@@ -1,5 +1,5 @@
 {
-  "name": "TucanaPowerManagement",
+  "name": "HALE_TucanaPowerManagement",
   "version": "0.1.0",
   "description": "Control API for the Tucana power management board by Oregon State University HALE",
   "keywords": "embedded, utilities",
