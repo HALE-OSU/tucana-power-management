@@ -16,6 +16,7 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, uint8_t lowBatteryReadPin,
     this->maxAnalogReading = pow(2, analogReadResolution);
 
     i2cBus->begin();
+    i2cBus->setClock(10000);
 
 #if TUCANA_POWER_MANAGEMENT_DEBUG
     Serial.println("Tucana Battery Management - beginning initialization");
@@ -69,6 +70,24 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, uint8_t lowBatteryReadPin,
 #if TUCANA_POWER_MANAGEMENT_DEBUG
     Serial.println("Tucana Battery Management - initialization complete");
 #endif
+
+    // Setup analog digital converters
+    MCP342x::generalCallReset();
+    lowPowerADC.configure(config);
+    delay(1000);  // MC342x needs 300us to settle
+
+    // i2cBus->requestFrom(lowPowerADCAddr, (uint8_t)3);
+
+    // TODO: proper debugging support
+    // if (i2cBus->available()) {
+    //     Serial.print("No ADC found at address ");
+    //     Serial.println(lowPowerADCAddr, HEX);
+    // } else {
+    //     Serial.println("Initialized low-power ADC");
+    // }
+
+    // First time loop() is called start a conversion
+    startConversion = true;
 
     return true;
 }
@@ -128,4 +147,57 @@ void TucanaPowerManagement::set_high_power_ctl(bool useQuickDisconnect) {
             String(useQuickDisconnect));
 #endif
     }
+}
+
+double low_power_adc_conversion(int32_t rawReading, int pgaGain,
+                                int bitResolution) {
+    // 1. Calculate the LSB (Least Significant Bit) voltage based on resolution
+    // MCP3427 reference is always 2.048V
+    double vRef = 2.048;
+    double maxCounts =
+        std::pow(2, bitResolution - 1);  // Signed 16-bit = 32768 counts
+
+    // 2. Convert raw reading to voltage at the ADC pin
+    double vAtPin = (rawReading * vRef) / (maxCounts * pgaGain);
+
+    // 3. Reverse the Voltage Divider
+    // R1 = 10,000 ohms, R2 = 39,000 ohms (the one being measured across)
+    const double R1 = 10000.0;
+    const double R2 = 39000.0;
+
+    double dividerRatio = (R1 + R2) / R2;  // (10k + 39k) / 39k = ~1.256
+    double vOriginal = vAtPin * dividerRatio;
+
+    return vOriginal;
+}
+
+int TucanaPowerManagement::read_adc() {
+    int32_t value = 0;
+    uint8_t err;
+
+    if (startConversion) {
+        Serial.println("Convert");
+        err = lowPowerADC.convert(config);
+        if (err) {
+            Serial.print("Convert error: ");
+            Serial.println(err);
+        }
+        startConversion = false;
+    }
+
+    err = lowPowerADC.read(value, status);
+    if (!err && status.isReady()) {
+        // For debugging purposes print the return value.
+        Serial.print("Value: ");
+        Serial.println(value);
+        Serial.print("Config: 0x");
+        Serial.println((int)config, HEX);
+        Serial.print("Convert error: ");
+        Serial.println(err);
+        startConversion = true;
+        Serial.print("Original voltage: ");
+        Serial.println(low_power_adc_conversion(value, 1, 12));
+    }
+
+    return 0;
 }

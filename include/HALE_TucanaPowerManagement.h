@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 #include <Adafruit_MCP23X08.h>
+#include <Wire.h>
+#include <MCP342x.h>
 
 #define TUCANA_POWER_MANAGEMENT_LOW_CTL_PIN 6u
 #define TUCANA_POWER_MANAGEMENT_HIGH_CTL_PIN 0u
@@ -17,6 +19,19 @@ class TucanaPowerManagement {
    private:
     TwoWire* i2cBus;
     Adafruit_MCP23X08 i2cDevice;
+
+    const int lowPowerADCAddr = 0x6E;
+
+    MCP342x lowPowerADC = MCP342x(lowPowerADCAddr);
+    MCP342x highPowerADC = MCP342x(0x68);
+
+    MCP342x::Config config =
+        MCP342x::Config(MCP342x::channel1, MCP342x::oneShot,
+                        MCP342x::resolution16, MCP342x::gain1);
+
+    // TODO: should be per-channel
+    MCP342x::Config status;
+    bool startConversion = false;
 
     uint8_t lowBatteryReadPin;
     uint8_t highBatteryReadPin;
@@ -108,4 +123,6 @@ class TucanaPowerManagement {
      * power quick disconnect, or false to use the high power battery
      */
     void set_high_power_ctl(bool useQuickDisconnect);
+
+    int read_adc();
 };
