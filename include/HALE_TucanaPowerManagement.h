@@ -25,17 +25,17 @@ class TucanaPowerManagement {
     MCP342x lowPowerADC = MCP342x(lowPowerADCAddr);
     MCP342x highPowerADC = MCP342x(0x68);
 
-    MCP342x::Config config =
+    MCP342x::Config ch1Config =
         MCP342x::Config(MCP342x::channel1, MCP342x::oneShot,
+                        MCP342x::resolution16, MCP342x::gain1);
+
+    MCP342x::Config ch2Config =
+        MCP342x::Config(MCP342x::channel2, MCP342x::oneShot,
                         MCP342x::resolution16, MCP342x::gain1);
 
     // TODO: should be per-channel
     MCP342x::Config status;
     bool startConversion = false;
-
-    uint8_t lowBatteryReadPin;
-    uint8_t highBatteryReadPin;
-    int maxAnalogReading;
 
     bool prevLowPowerControl = false;
     bool prevHighPowerControl = false;
@@ -53,10 +53,6 @@ class TucanaPowerManagement {
      *
      * @param i2cBus - the teensy I2C Tucana is connect to. Either &Wire1 or
      * &Wire2
-     * @param lowBatteryReadPin - the Teensy pin number that's connected to the
-     * Tucana low battery reading circuit
-     * @param lowBatteryReadPin - the Teensy pin number that's connected to the
-     * Tucana high battery reading circuit
      * @param addrA0 - true if the A0 (+) address jumper is soldered, false if
      * the A0 (-) address jumper is soldered
      * @param addrA1 - true if the A1 (+) address jumper is soldered, false if
@@ -66,9 +62,7 @@ class TucanaPowerManagement {
      *
      * @returns true if initialization is successful, false if not
      */
-    bool begin(TwoWire* i2cBus, uint8_t lowBatteryReadPin,
-               uint8_t highBatteryReadPin, bool addrA0, bool addrA1,
-               bool addrA2, int analogReadResolution);
+    bool begin(TwoWire* i2cBus, bool addrA0, bool addrA1, bool addrA2);
 
     /**
      * Reads the low battery stat pin
@@ -85,24 +79,6 @@ class TucanaPowerManagement {
      * power quick disconnect power source is in use
      */
     bool read_high_stat();
-
-    /**
-     * Reads the voltage of the low power battery. Note that this requires
-     * connecting the Tucana low power battery reading to Gemma via cable. See
-     * Tucana docs for more info.
-     *
-     * @returns the low power battery reading in volts
-     */
-    float read_low_battery_voltage();
-
-    /**
-     * Reads the voltage of the high power battery. Note that this requires
-     * connecting the Tucana high power battery reading to Gemma via cable. See
-     * Tucana docs for more info.
-     *
-     * @returns the high power battery reading in volts
-     */
-    float read_high_battery_voltage();
 
     /**
      * Sets the state of the low power control pin. Note that this will only

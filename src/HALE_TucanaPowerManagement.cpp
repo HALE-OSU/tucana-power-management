@@ -2,18 +2,9 @@
 
 TucanaPowerManagement::TucanaPowerManagement() {}
 
-bool TucanaPowerManagement::begin(TwoWire* i2cBus, uint8_t lowBatteryReadPin,
-                                  uint8_t highBatteryReadPin, bool addrA0,
-                                  bool addrA1, bool addrA2,
-                                  int analogReadResolution) {
-    Arduino_h::analogReadResolution(analogReadResolution);
-
+bool TucanaPowerManagement::begin(TwoWire* i2cBus, bool addrA0, bool addrA1,
+                                  bool addrA2) {
     this->i2cBus = i2cBus;
-    this->lowBatteryReadPin = lowBatteryReadPin;
-    this->highBatteryReadPin = highBatteryReadPin;
-
-    // The maximum value returned from an analog read will be 2^resolution
-    this->maxAnalogReading = pow(2, analogReadResolution);
 
     i2cBus->begin();
     i2cBus->setClock(10000);
@@ -63,17 +54,13 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, uint8_t lowBatteryReadPin,
         "battery reading pins");
 #endif
 
-    // Configure analog battery input pins
-    pinMode(this->lowBatteryReadPin, INPUT);
-    pinMode(this->highBatteryReadPin, INPUT);
-
 #if TUCANA_POWER_MANAGEMENT_DEBUG
     Serial.println("Tucana Battery Management - initialization complete");
 #endif
 
     // Setup analog digital converters
     MCP342x::generalCallReset();
-    lowPowerADC.configure(config);
+    lowPowerADC.configure(ch2Config);
     delay(1000);  // MC342x needs 300us to settle
 
     // i2cBus->requestFrom(lowPowerADCAddr, (uint8_t)3);
@@ -100,26 +87,6 @@ bool TucanaPowerManagement::read_high_stat() {
     return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_HIGH_STAT_PIN);
 }
 
-float TucanaPowerManagement::read_low_battery_voltage() {
-    int rawPinInput = analogRead(lowBatteryReadPin);
-
-    // Convert to 0-3.3v range (the voltage the MCP23008 reads at)
-    float readVoltage = (rawPinInput / (float)maxAnalogReading) * 3.3;
-
-    // Undo the Tucana voltage divider circuit to get the actual battery voltage
-    return readVoltage * TUCANA_POWER_MANAGEMENT_LOW_READING_CONVERSION;
-}
-
-float TucanaPowerManagement::read_high_battery_voltage() {
-    int rawPinInput = analogRead(highBatteryReadPin);
-
-    // Convert to 0-3.3v range (the voltage the MCP23008 reads at)
-    float readVoltage = (rawPinInput / (float)maxAnalogReading) * 3.3;
-
-    // Undo the Tucana voltage divider circuit to get the actual battery voltage
-    return readVoltage * TUCANA_POWER_MANAGEMENT_HIGH_READING_CONVERSION;
-}
-
 void TucanaPowerManagement::set_low_power_ctl(bool useQuickDisconnect) {
     if (useQuickDisconnect != prevLowPowerControl) {
         i2cDevice.digitalWrite(TUCANA_POWER_MANAGEMENT_LOW_CTL_PIN,
@@ -136,10 +103,10 @@ void TucanaPowerManagement::set_low_power_ctl(bool useQuickDisconnect) {
 
 void TucanaPowerManagement::set_high_power_ctl(bool useQuickDisconnect) {
     // Same as above
-    if (useQuickDisconnect != prevLowPowerControl) {
-        i2cDevice.digitalWrite(TUCANA_POWER_MANAGEMENT_LOW_CTL_PIN,
+    if (useQuickDisconnect != prevHighPowerControl) {
+        i2cDevice.digitalWrite(TUCANA_POWER_MANAGEMENT_HIGH_CTL_PIN,
                                useQuickDisconnect ? HIGH : LOW);
-        prevLowPowerControl = useQuickDisconnect;
+        prevHighPowerControl = useQuickDisconnect;
 
 #if TUCANA_POWER_MANAGEMENT_DEBUG
         SerialDebugger::debugPrintln(
@@ -177,7 +144,7 @@ int TucanaPowerManagement::read_adc() {
 
     if (startConversion) {
         Serial.println("Convert");
-        err = lowPowerADC.convert(config);
+        err = lowPowerADC.convert(ch2Config);
         if (err) {
             Serial.print("Convert error: ");
             Serial.println(err);
@@ -191,7 +158,7 @@ int TucanaPowerManagement::read_adc() {
         Serial.print("Value: ");
         Serial.println(value);
         Serial.print("Config: 0x");
-        Serial.println((int)config, HEX);
+        Serial.println((int)ch2Config, HEX);
         Serial.print("Convert error: ");
         Serial.println(err);
         startConversion = true;

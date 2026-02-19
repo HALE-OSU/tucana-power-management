@@ -60,11 +60,13 @@ void setup() {
     // // Pause program once scan is complete
     // while (1);
 
-    tucana.begin(&Wire2, 0x00, 0x00, true, true, true, 12);
+    tucana.begin(&Wire2, true, true, true);
 }
 
 void loop() {
 #if READ_ADC
+    // tucana.read_adc();
+    // tucana.update();
     tucana.read_adc();
 #endif
 
