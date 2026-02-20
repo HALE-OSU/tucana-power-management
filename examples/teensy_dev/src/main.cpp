@@ -67,7 +67,7 @@ void loop() {
 #if READ_ADC
     // tucana.read_adc();
     // tucana.update();
-    tucana.read_adc();
+    tucana.get_low_batt_voltage();
 #endif
 
 #if CYCLE_CTL

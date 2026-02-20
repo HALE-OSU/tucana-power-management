@@ -37,6 +37,8 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, bool addrA0, bool addrA1,
     i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_CTL_PIN, OUTPUT);
     i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_LOW_STAT_PIN, INPUT);
     i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_STAT_PIN, INPUT);
+    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_LOW_QD_PIN, INPUT);
+    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_QD_PIN, INPUT);
 
 #if TUCANA_POWER_MANAGEMENT_DEBUG
     SerialDebugger::debugPrintln(
@@ -74,7 +76,7 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, bool addrA0, bool addrA1,
     // }
 
     // First time loop() is called start a conversion
-    startConversion = true;
+    startedLowAdcConversion = true;
 
     return true;
 }
@@ -87,11 +89,19 @@ bool TucanaPowerManagement::read_high_stat() {
     return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_HIGH_STAT_PIN);
 }
 
+bool TucanaPowerManagement::read_low_qd() {
+    return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_LOW_QD_PIN);
+}
+
+bool TucanaPowerManagement::read_high_qd() {
+    return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_HIGH_QD_PIN);
+}
+
 void TucanaPowerManagement::set_low_power_ctl(bool useQuickDisconnect) {
-    if (useQuickDisconnect != prevLowPowerControl) {
+    if (useQuickDisconnect != prevLowControl) {
         i2cDevice.digitalWrite(TUCANA_POWER_MANAGEMENT_LOW_CTL_PIN,
                                useQuickDisconnect ? HIGH : LOW);
-        prevLowPowerControl = useQuickDisconnect;
+        prevLowControl = useQuickDisconnect;
 
 #if TUCANA_POWER_MANAGEMENT_DEBUG
         SerialDebugger::debugPrintln(
@@ -103,10 +113,10 @@ void TucanaPowerManagement::set_low_power_ctl(bool useQuickDisconnect) {
 
 void TucanaPowerManagement::set_high_power_ctl(bool useQuickDisconnect) {
     // Same as above
-    if (useQuickDisconnect != prevHighPowerControl) {
+    if (useQuickDisconnect != prevHighControl) {
         i2cDevice.digitalWrite(TUCANA_POWER_MANAGEMENT_HIGH_CTL_PIN,
                                useQuickDisconnect ? HIGH : LOW);
-        prevHighPowerControl = useQuickDisconnect;
+        prevHighControl = useQuickDisconnect;
 
 #if TUCANA_POWER_MANAGEMENT_DEBUG
         SerialDebugger::debugPrintln(
@@ -116,10 +126,15 @@ void TucanaPowerManagement::set_high_power_ctl(bool useQuickDisconnect) {
     }
 }
 
-double low_power_adc_conversion(int32_t rawReading, int pgaGain,
-                                int bitResolution) {
-    // 1. Calculate the LSB (Least Significant Bit) voltage based on resolution
-    // MCP3427 reference is always 2.048V
+void update_voltage_readings() {}
+
+float TucanaPowerManagement::voltage_conversion(int32_t rawReading, float rRead,
+                                                float rOther) {
+    const int bitResolution = 12;
+    const int pgaGain = 1;
+
+    // 1. Calculate the LSB (Least Significant Bit) voltage based on
+    // resolution MCP3427 reference is always 2.048V
     double vRef = 2.048;
     double maxCounts =
         std::pow(2, bitResolution - 1);  // Signed 16-bit = 32768 counts
@@ -129,27 +144,36 @@ double low_power_adc_conversion(int32_t rawReading, int pgaGain,
 
     // 3. Reverse the Voltage Divider
     // R1 = 10,000 ohms, R2 = 39,000 ohms (the one being measured across)
-    const double R1 = 10000.0;
-    const double R2 = 39000.0;
 
-    double dividerRatio = (R1 + R2) / R2;  // (10k + 39k) / 39k = ~1.256
-    double vOriginal = vAtPin * dividerRatio;
+    float dividerRatio =
+        (rOther + rRead) / rRead;  // (10k + 39k) / 39k = ~1.256
+    float vOriginal = vAtPin * dividerRatio;
 
     return vOriginal;
 }
 
-int TucanaPowerManagement::read_adc() {
+float TucanaPowerManagement::low_voltage_conversion(int32_t rawReading) {
+    // TODO: change resistances
+    return voltage_conversion(rawReading, 22000.0, 12000.0);
+}
+
+float TucanaPowerManagement::high_voltage_conversion(int32_t rawReading) {
+    // TODO: change resistances
+    return voltage_conversion(rawReading, 39000.0, 10000.0);
+}
+
+float TucanaPowerManagement::get_low_batt_voltage() {
     int32_t value = 0;
     uint8_t err;
 
-    if (startConversion) {
+    if (startedLowAdcConversion) {
         Serial.println("Convert");
         err = lowPowerADC.convert(ch2Config);
         if (err) {
             Serial.print("Convert error: ");
             Serial.println(err);
         }
-        startConversion = false;
+        startedLowAdcConversion = false;
     }
 
     err = lowPowerADC.read(value, status);
@@ -161,10 +185,12 @@ int TucanaPowerManagement::read_adc() {
         Serial.println((int)ch2Config, HEX);
         Serial.print("Convert error: ");
         Serial.println(err);
-        startConversion = true;
+        startedLowAdcConversion = true;
         Serial.print("Original voltage: ");
-        Serial.println(low_power_adc_conversion(value, 1, 12));
+        Serial.println(low_voltage_conversion(value));
+
+        recent_low_batt_voltage = low_voltage_conversion(value);
     }
 
-    return 0;
+    return recent_low_batt_voltage;
 }

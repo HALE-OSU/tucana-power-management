@@ -9,6 +9,8 @@
 #define TUCANA_POWER_MANAGEMENT_HIGH_CTL_PIN 0u
 #define TUCANA_POWER_MANAGEMENT_LOW_STAT_PIN 7u
 #define TUCANA_POWER_MANAGEMENT_HIGH_STAT_PIN 1u
+#define TUCANA_POWER_MANAGEMENT_LOW_QD_PIN 5u
+#define TUCANA_POWER_MANAGEMENT_HIGH_QD_PIN 2u
 
 // From Tucana documentation
 // TODO: actual conversions
@@ -35,10 +37,28 @@ class TucanaPowerManagement {
 
     // TODO: should be per-channel
     MCP342x::Config status;
-    bool startConversion = false;
 
-    bool prevLowPowerControl = false;
-    bool prevHighPowerControl = false;
+    bool startedLowAdcConversion = false;
+    bool startedHighAdcConversion = false;
+
+    bool prevLowControl = false;
+    bool prevHighControl = false;
+
+    float recent_low_batt_voltage = 0;
+    float recent_low_qd_voltage = 0;
+    float recent_high_batt_voltage = 0;
+    float recent_high_qd_voltage = 0;
+
+    void update_voltage_readings();
+
+    float voltage_conversion(int32_t rawReading, float rRead, float rOther);
+
+    float low_voltage_conversion(int32_t rawReading);
+
+    float high_voltage_conversion(int32_t rawReading);
+
+    bool readingLowBatt;
+    bool readingHighBatt;
 
    public:
     /**
@@ -81,6 +101,16 @@ class TucanaPowerManagement {
     bool read_high_stat();
 
     /**
+     * @returns true if the low power QD is connected, false if not
+     */
+    bool read_low_qd();
+
+    /**
+     * @returns true if the high power QD is connected, false if not
+     */
+    bool read_high_qd();
+
+    /**
      * Sets the state of the low power control pin. Note that this will only
      * update the pin state when a new value is provided, meaning calling this
      * in a loop is not an issue.
@@ -100,5 +130,9 @@ class TucanaPowerManagement {
      */
     void set_high_power_ctl(bool useQuickDisconnect);
 
-    int read_adc();
+    float get_low_batt_voltage();
+    float get_low_qd_voltage();
+
+    float get_high_batt_voltage();
+    float get_high_qd_voltage();
 };
