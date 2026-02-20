@@ -154,7 +154,7 @@ float TucanaPowerManagement::voltage_conversion(int32_t rawReading, float rRead,
 
 float TucanaPowerManagement::low_voltage_conversion(int32_t rawReading) {
     // TODO: change resistances
-    return voltage_conversion(rawReading, 22000.0, 12000.0);
+    return voltage_conversion(rawReading, 12000.0, 22000.0);
 }
 
 float TucanaPowerManagement::high_voltage_conversion(int32_t rawReading) {
@@ -179,15 +179,15 @@ float TucanaPowerManagement::get_low_batt_voltage() {
     err = lowPowerADC.read(value, status);
     if (!err && status.isReady()) {
         // For debugging purposes print the return value.
-        Serial.print("Value: ");
-        Serial.println(value);
-        Serial.print("Config: 0x");
-        Serial.println((int)ch2Config, HEX);
-        Serial.print("Convert error: ");
-        Serial.println(err);
+        // Serial.print("Value: ");
+        // Serial.println(value);
+        // Serial.print("Config: 0x");
+        // Serial.println((int)ch2Config, HEX);
+        // Serial.print("Convert error: ");
+        // Serial.println(err);
         startedLowAdcConversion = true;
-        Serial.print("Original voltage: ");
-        Serial.println(low_voltage_conversion(value));
+        // Serial.print("Original voltage: ");
+        // Serial.println(low_voltage_conversion(value));
 
         recent_low_batt_voltage = low_voltage_conversion(value);
     }
