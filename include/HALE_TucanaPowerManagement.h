@@ -90,7 +90,7 @@ class TucanaPowerManagement {
      * @returns true if the low power battery is in use or false if the low
      * power quick disconnect power source is in use
      */
-    bool read_low_stat();
+    bool low_qd_selected();
 
     /**
      * Reads the high battery stat pin
@@ -98,17 +98,17 @@ class TucanaPowerManagement {
      * @returns true if the high power battery is in use or false if the high
      * power quick disconnect power source is in use
      */
-    bool read_high_stat();
+    bool high_qd_selected();
 
     /**
      * @returns true if the low power QD is connected, false if not
      */
-    bool read_low_qd();
+    bool low_qd_present();
 
     /**
      * @returns true if the high power QD is connected, false if not
      */
-    bool read_high_qd();
+    bool high_qd_present();
 
     /**
      * Sets the state of the low power control pin. Note that this will only

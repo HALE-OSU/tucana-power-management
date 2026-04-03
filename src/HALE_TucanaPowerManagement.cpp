@@ -35,10 +35,10 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, bool addrA0, bool addrA1,
     // controlled over I2C w/ MCP23008
     i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_LOW_CTL_PIN, OUTPUT);
     i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_CTL_PIN, OUTPUT);
-    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_LOW_STAT_PIN, INPUT);
-    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_STAT_PIN, INPUT);
-    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_LOW_QD_PIN, INPUT);
-    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_QD_PIN, INPUT);
+    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_LOW_STAT_PIN, INPUT_PULLUP);
+    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_STAT_PIN, INPUT_PULLUP);
+    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_LOW_QD_PIN, INPUT_PULLUP);
+    i2cDevice.pinMode(TUCANA_POWER_MANAGEMENT_HIGH_QD_PIN, INPUT_PULLUP);
 
 #if TUCANA_POWER_MANAGEMENT_DEBUG
     SerialDebugger::debugPrintln(
@@ -81,20 +81,22 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, bool addrA0, bool addrA1,
     return true;
 }
 
-bool TucanaPowerManagement::read_low_stat() {
+bool TucanaPowerManagement::low_qd_selected() {
     return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_LOW_STAT_PIN);
 }
 
-bool TucanaPowerManagement::read_high_stat() {
+bool TucanaPowerManagement::high_qd_selected() {
     return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_HIGH_STAT_PIN);
 }
 
-bool TucanaPowerManagement::read_low_qd() {
-    return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_LOW_QD_PIN);
+bool TucanaPowerManagement::low_qd_present() {
+    // Invert logic (qd pulls down)
+    return !i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_LOW_QD_PIN);
 }
 
-bool TucanaPowerManagement::read_high_qd() {
-    return i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_HIGH_QD_PIN);
+bool TucanaPowerManagement::high_qd_present() {
+    // Invert logic (qd pulls down)
+    return !i2cDevice.digitalRead(TUCANA_POWER_MANAGEMENT_HIGH_QD_PIN);
 }
 
 void TucanaPowerManagement::set_low_power_ctl(bool useQuickDisconnect) {
@@ -163,11 +165,11 @@ float TucanaPowerManagement::high_voltage_conversion(int32_t rawReading) {
 }
 
 float TucanaPowerManagement::get_low_batt_voltage() {
-    int32_t value = 0;
+    long value = 0;
     uint8_t err;
 
     if (startedLowAdcConversion) {
-        Serial.println("Convert");
+        // Serial.println("Convert");
         err = lowPowerADC.convert(ch2Config);
         if (err) {
             Serial.print("Convert error: ");
