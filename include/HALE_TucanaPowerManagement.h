@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <Adafruit_MCP23X08.h>
 #include <Wire.h>
-#include <MCP342x.h>
 
 #define TUCANA_POWER_MANAGEMENT_LOW_CTL_PIN 6u
 #define TUCANA_POWER_MANAGEMENT_HIGH_CTL_PIN 0u
@@ -14,51 +13,51 @@
 
 // From Tucana documentation
 // TODO: actual conversions
-#define TUCANA_POWER_MANAGEMENT_LOW_READING_CONVERSION 1.0
-#define TUCANA_POWER_MANAGEMENT_HIGH_READING_CONVERSION 1.0
+// #define TUCANA_POWER_MANAGEMENT_LOW_READING_CONVERSION 1.0
+// #define TUCANA_POWER_MANAGEMENT_HIGH_READING_CONVERSION 1.0
 
 class TucanaPowerManagement {
    private:
     TwoWire* i2cBus;
     Adafruit_MCP23X08 i2cDevice;
 
-    const int lowPowerADCAddr = 0x6E;
+    // const int lowPowerADCAddr = 0x6E;
 
-    MCP342x lowPowerADC = MCP342x(lowPowerADCAddr);
-    MCP342x highPowerADC = MCP342x(0x68);
+    // MCP342x lowPowerADC = MCP342x(lowPowerADCAddr);
+    // MCP342x highPowerADC = MCP342x(0x68);
 
-    MCP342x::Config ch1Config =
-        MCP342x::Config(MCP342x::channel1, MCP342x::oneShot,
-                        MCP342x::resolution16, MCP342x::gain1);
+    // MCP342x::Config ch1Config =
+    //     MCP342x::Config(MCP342x::channel1, MCP342x::oneShot,
+    //                     MCP342x::resolution16, MCP342x::gain1);
 
-    MCP342x::Config ch2Config =
-        MCP342x::Config(MCP342x::channel2, MCP342x::oneShot,
-                        MCP342x::resolution16, MCP342x::gain1);
+    // MCP342x::Config ch2Config =
+    //     MCP342x::Config(MCP342x::channel2, MCP342x::oneShot,
+    //                     MCP342x::resolution16, MCP342x::gain1);
 
     // TODO: should be per-channel
-    MCP342x::Config status;
+    // MCP342x::Config status;
 
-    bool startedLowAdcConversion = false;
-    bool startedHighAdcConversion = false;
+    // bool startedLowAdcConversion = false;
+    // bool startedHighAdcConversion = false;
 
     bool prevLowControl = false;
     bool prevHighControl = false;
 
-    float recent_low_batt_voltage = 0;
-    float recent_low_qd_voltage = 0;
-    float recent_high_batt_voltage = 0;
-    float recent_high_qd_voltage = 0;
+    // float recent_low_batt_voltage = 0;
+    // float recent_low_qd_voltage = 0;
+    // float recent_high_batt_voltage = 0;
+    // float recent_high_qd_voltage = 0;
 
     void update_voltage_readings();
 
-    float voltage_conversion(int32_t rawReading, float rRead, float rOther);
+    // float voltage_conversion(int32_t rawReading, float rRead, float rOther);
 
-    float low_voltage_conversion(int32_t rawReading);
+    // float low_voltage_conversion(int32_t rawReading);
 
-    float high_voltage_conversion(int32_t rawReading);
+    // float high_voltage_conversion(int32_t rawReading);
 
-    bool readingLowBatt;
-    bool readingHighBatt;
+    // bool readingLowBatt;
+    // bool readingHighBatt;
 
    public:
     /**
@@ -130,9 +129,9 @@ class TucanaPowerManagement {
      */
     void set_high_power_ctl(bool useQuickDisconnect);
 
-    float get_low_batt_voltage();
-    float get_low_qd_voltage();
+    // float get_low_batt_voltage();
+    // float get_low_qd_voltage();
 
-    float get_high_batt_voltage();
-    float get_high_qd_voltage();
+    // float get_high_batt_voltage();
+    // float get_high_qd_voltage();
 };

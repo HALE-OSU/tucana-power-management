@@ -78,7 +78,7 @@ void loop() {
 
     delay(2000);
 
-    Serial.println("Setting power sources to QD");
+    Serial.println("Setting low power source to QD");
     tucana.set_low_power_ctl(true);
     tucana.set_high_power_ctl(true);
 
@@ -96,7 +96,7 @@ void loop() {
 
     delay(2000);
 
-    Serial.println("Setting power sources to battery");
+    Serial.println("Setting low power source to battery");
     tucana.set_low_power_ctl(false);
     tucana.set_high_power_ctl(false);
 

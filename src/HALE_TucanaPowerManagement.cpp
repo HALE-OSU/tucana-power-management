@@ -61,8 +61,8 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, bool addrA0, bool addrA1,
 #endif
 
     // Setup analog digital converters
-    MCP342x::generalCallReset();
-    lowPowerADC.configure(ch2Config);
+    // MCP342x::generalCallReset();
+    // lowPowerADC.configure(ch2Config);
     delay(1000);  // MC342x needs 300us to settle
 
     // i2cBus->requestFrom(lowPowerADCAddr, (uint8_t)3);
@@ -76,7 +76,7 @@ bool TucanaPowerManagement::begin(TwoWire* i2cBus, bool addrA0, bool addrA1,
     // }
 
     // First time loop() is called start a conversion
-    startedLowAdcConversion = true;
+    // startedLowAdcConversion = true;
 
     return true;
 }
@@ -128,71 +128,72 @@ void TucanaPowerManagement::set_high_power_ctl(bool useQuickDisconnect) {
     }
 }
 
-void update_voltage_readings() {}
+// void update_voltage_readings() {}
 
-float TucanaPowerManagement::voltage_conversion(int32_t rawReading, float rRead,
-                                                float rOther) {
-    const int bitResolution = 12;
-    const int pgaGain = 1;
+// float TucanaPowerManagement::voltage_conversion(int32_t rawReading, float
+// rRead,
+//                                                 float rOther) {
+//     const int bitResolution = 12;
+//     const int pgaGain = 1;
 
-    // 1. Calculate the LSB (Least Significant Bit) voltage based on
-    // resolution MCP3427 reference is always 2.048V
-    double vRef = 2.048;
-    double maxCounts =
-        std::pow(2, bitResolution - 1);  // Signed 16-bit = 32768 counts
+//     // 1. Calculate the LSB (Least Significant Bit) voltage based on
+//     // resolution MCP3427 reference is always 2.048V
+//     double vRef = 2.048;
+//     double maxCounts =
+//         std::pow(2, bitResolution - 1);  // Signed 16-bit = 32768 counts
 
-    // 2. Convert raw reading to voltage at the ADC pin
-    double vAtPin = (rawReading * vRef) / (maxCounts * pgaGain);
+//     // 2. Convert raw reading to voltage at the ADC pin
+//     double vAtPin = (rawReading * vRef) / (maxCounts * pgaGain);
 
-    // 3. Reverse the Voltage Divider
-    // R1 = 10,000 ohms, R2 = 39,000 ohms (the one being measured across)
+//     // 3. Reverse the Voltage Divider
+//     // R1 = 10,000 ohms, R2 = 39,000 ohms (the one being measured across)
 
-    float dividerRatio =
-        (rOther + rRead) / rRead;  // (10k + 39k) / 39k = ~1.256
-    float vOriginal = vAtPin * dividerRatio;
+//     float dividerRatio =
+//         (rOther + rRead) / rRead;  // (10k + 39k) / 39k = ~1.256
+//     float vOriginal = vAtPin * dividerRatio;
 
-    return vOriginal;
-}
+//     return vOriginal;
+// }
 
-float TucanaPowerManagement::low_voltage_conversion(int32_t rawReading) {
-    // TODO: change resistances
-    return voltage_conversion(rawReading, 12000.0, 22000.0);
-}
+// // float TucanaPowerManagement::low_voltage_conversion(int32_t rawReading) {
+// //     // TODO: change resistances
+// //     return voltage_conversion(rawReading, 12000.0, 22000.0);
+// // }
 
-float TucanaPowerManagement::high_voltage_conversion(int32_t rawReading) {
-    // TODO: change resistances
-    return voltage_conversion(rawReading, 39000.0, 10000.0);
-}
+// float TucanaPowerManagement::high_voltage_conversion(int32_t rawReading) {
+//     // TODO: change resistances
+//     return voltage_conversion(rawReading, 39000.0, 10000.0);
+// }
 
-float TucanaPowerManagement::get_low_batt_voltage() {
-    long value = 0;
-    uint8_t err;
+// float TucanaPowerManagement::get_low_batt_voltage() {
+//     long value = 0;
+//     uint8_t err;
 
-    if (startedLowAdcConversion) {
-        // Serial.println("Convert");
-        err = lowPowerADC.convert(ch2Config);
-        if (err) {
-            Serial.print("Convert error: ");
-            Serial.println(err);
-        }
-        startedLowAdcConversion = false;
-    }
+//     if (startedLowAdcConversion) {
+//         // Serial.println("Convert");
+//         err = lowPowerADC.convert(ch2Config);
+//         if (err) {
+//             Serial.print("Convert error: ");
+//             Serial.println(err);
+//         }
+//         startedLowAdcConversion = false;
+//     }
 
-    err = lowPowerADC.read(value, status);
-    if (!err && status.isReady()) {
-        // For debugging purposes print the return value.
-        // Serial.print("Value: ");
-        // Serial.println(value);
-        // Serial.print("Config: 0x");
-        // Serial.println((int)ch2Config, HEX);
-        // Serial.print("Convert error: ");
-        // Serial.println(err);
-        startedLowAdcConversion = true;
-        // Serial.print("Original voltage: ");
-        // Serial.println(low_voltage_conversion(value));
+//     err = lowPowerADC.read(value, status);
+//     if (!err && status.isReady()) {
+//         // For debugging purposes print the return value.
+//         // Serial.print("Value: ");
+//         // Serial.println(value);
+//         // Serial.print("Config: 0x");
+//         // Serial.println((int)ch2Config, HEX);
+//         // Serial.print("Convert error: ");
+//         // Serial.println(err);
+//         startedLowAdcConversion = true;
+//         // Serial.print("Original voltage: ");
+//         // Serial.println(low_voltage_conversion(value));
 
-        recent_low_batt_voltage = low_voltage_conversion(value);
-    }
+//         recent_low_batt_voltage = low_voltage_conversion(value);
+//     }
 
-    return recent_low_batt_voltage;
-}
+//     return recent_low_batt_voltage;
+// }
