@@ -16,7 +16,6 @@
   "frameworks": ["arduino"],
   "platforms": "*",
   "dependencies": {
-    "adafruit/Adafruit MCP23017 Arduino Library": "^2.3.2",
-    "stevemarple/MCP342x": "^1.0.4"
+    "adafruit/Adafruit MCP23017 Arduino Library": "^2.3.2"
   }
 }

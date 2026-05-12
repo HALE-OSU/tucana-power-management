@@ -7,14 +7,14 @@
 
 TucanaPowerManagement tucana;
 
-#define CYCLE_CTL false
-#define READ_ADC true
+#define CYCLE_CTL true
+#define READ_ADC false
 
 void setup() {
     Serial.begin(115200);
 
     // Wait for serial monitor to connect (up to 10 seconds)
-    while (!Serial || millis() < 10000) continue;
+    while (!Serial && millis() < 3000) continue;
 
     byte error, address;
     int nDevices;
@@ -57,9 +57,6 @@ void setup() {
         Serial.println("done\n");
     }
 
-    // // Pause program once scan is complete
-    // while (1);
-
     tucana.begin(&Wire2, true, true, true);
 }
 
@@ -67,38 +64,30 @@ void loop() {
 #if READ_ADC
     // tucana.read_adc();
     // tucana.update();
-    Serial.println(tucana.get_low_batt_voltage());
+    // Serial.println(tucana.get_low_batt_voltage());
 #endif
 
 #if CYCLE_CTL
-    Serial.println("Low stat is: " + String(tucana.read_low_stat()));
-    Serial.println("High stat is: " + String(tucana.read_low_stat()));
+    Serial.println("Low QD selected: " + String(tucana.low_qd_selected()));
+    Serial.println("High QD selected: " + String(tucana.high_qd_selected()));
 
     delay(2000);
 
-    Serial.println("Setting low power source to QD");
+    Serial.println("Setting source to QD");
     tucana.set_low_power_ctl(true);
-
-    delay(2000);
-
-    Serial.println("Setting high power source to QD");
     tucana.set_high_power_ctl(true);
 
+    delay(500);
+
+    Serial.println("Low QD selected: " + String(tucana.low_qd_selected()));
+    Serial.println("High QD selected: " + String(tucana.high_qd_selected()));
+
     delay(2000);
 
-    Serial.println("Low stat is: " + String(tucana.read_low_stat()));
-    Serial.println("High stat is: " + String(tucana.read_low_stat()));
-
-    delay(2000);
-
-    Serial.println("Setting low power source to battery");
+    Serial.println("Setting source to battery");
     tucana.set_low_power_ctl(false);
-
-    delay(2000);
-
-    Serial.println("Setting high power source to battery");
     tucana.set_high_power_ctl(false);
 
-    delay(2000);
+    delay(500);
 #endif
 }
